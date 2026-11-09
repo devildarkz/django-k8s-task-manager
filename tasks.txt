@@ -1,0 +1,5 @@
+# Project To-Do List
+- [x] Initialize Node.js backend
+- [x] Containerize with Docker
+- [x] Deploy to Minikube
+- [ ] Set up CI/CD pipeline
