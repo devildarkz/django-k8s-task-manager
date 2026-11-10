@@ -25,10 +25,25 @@ ROOT_URLCONF = 'taskproject.urls'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL', 'postgresql://postgres:password@localhost:5432/tasksdb')
+        default=os.environ.get('DATABASE_URL', 'postgresql://postgres:password@postgres-service:5432/taskdb'),
+        conn_max_age=600
     )
 }
-
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [BASE_DIR],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True

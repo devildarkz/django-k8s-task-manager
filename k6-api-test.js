@@ -1,18 +1,18 @@
 import http from 'k6/http';
 import { sleep, check } from 'k6';
 
-// Restrict to a single virtual user and one iteration for a quick health check
+// Configured for Deliverable 3 requirements: 500 VUs for 60 seconds
 export const options = {
-  vus: 1,
-  iterations: 1,
+  vus: 500,
+  duration: '60s',
 };
 
 export default function () {
-// Use your active Minikube tunnel URL
-const url = 'http://127.0.0.1:51132/tasks';
+  // Target the active kubectl port-forward tunnel on port 3000
+  const url = 'http://127.0.0.1:3000/tasks/';
 
-const response = http.get(url);
-  
+  const response = http.get(url);
+
   check(response, {
     'status is 200': (r) => r.status === 200,
     'API returns JSON array': (r) => r.body.startsWith('['),

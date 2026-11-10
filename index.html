@@ -1,67 +1,160 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Task Manager</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; max-width: 500px; margin: auto; background-color: #f4f4f9; }
-    .task-list { list-style: none; padding: 0; }
-    .task-item { display: flex; align-items: center; justify-content: space-between; background: white; padding: 10px; margin-bottom: 8px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    .controls button { margin-left: 5px; cursor: pointer; }
-    .completed { text-decoration: line-through; color: #888; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager Pro</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <h2>Task Manager</h2>
-  <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-    <input type="text" id="taskTitle" placeholder="What needs to be done?" style="flex-grow: 1; padding: 8px;">
-    <button onclick="addTask()" style="padding: 8px 15px; cursor: pointer;">Add</button>
-  </div>
-  <ul id="taskList" class="task-list"></ul>
+<body class="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen text-slate-800 font-sans py-10 px-4">
+    <div class="max-w-xl mx-auto bg-white shadow-xl rounded-2xl p-6 md:p-8">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-slate-900">Task Manager</h1>
+                <p class="text-sm text-slate-500 mt-1">Stay organized and boost your daily productivity</p>
+            </div>
+            <div class="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide uppercase">
+                Kubernetes Cluster
+            </div>
+        </div>
 
-  <script>
-    async function fetchTasks() {
-      const res = await fetch('/tasks');
-      const tasks = await res.json();
-      const list = document.getElementById('taskList');
-      list.innerHTML = tasks.map(t => 
-        `<li class="task-item">
-          <span class="${t.completed ? 'completed' : ''}">${t.title}</span>
-          <div class="controls">
-            <button onclick="toggle(${t.id}, ${!t.completed})">✓</button>
-            <button onclick="deleteTask(${t.id})">✕</button>
-          </div>
-        </li>`
-      ).join('');
-    }
+        <!-- Add Task Form -->
+        <form onsubmit="addTask(event)" class="flex gap-3 mb-8">
+            <input 
+                type="text" 
+                id="taskInput" 
+                placeholder="What needs to be done today?" 
+                autocomplete="off"
+                required
+                class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all">
+            <button 
+                type="submit" 
+                class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-3 rounded-xl text-sm shadow-sm transition-all flex items-center justify-center">
+                Add Task
+            </button>
+        </form>
 
-    async function addTask() {
-      const titleInput = document.getElementById('taskTitle');
-      if (!titleInput.value.trim()) return;
-      
-      await fetch('/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: titleInput.value })
-      });
-      titleInput.value = '';
-      fetchTasks();
-    }
+        <!-- Task List Header -->
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xs font-bold tracking-wider text-slate-400 uppercase">Your Tasks</h2>
+            <span id="taskCount" class="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">0 tasks</span>
+        </div>
 
-    async function toggle(id, completed) {
-      await fetch(`/tasks/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ completed })
-      });
-      fetchTasks();
-    }
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden text-center py-12 border-2 border-dashed border-slate-100 rounded-2xl mb-4">
+            <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <p class="text-slate-700 font-medium text-sm">All caught up!</p>
+            <p class="text-slate-400 text-xs mt-1">Add a new task above to get started.</p>
+        </div>
 
-    async function deleteTask(id) {
-      await fetch(`/tasks/${id}`, { method: 'DELETE' });
-      fetchTasks();
-    }
+        <!-- Dynamic Task List Container -->
+        <ul id="taskList" class="space-y-3"></ul>
 
-    fetchTasks();
-  </script>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        const API_URL = '/tasks/';
+
+        async function fetchTasks() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error('Failed to fetch tasks');
+                const tasks = await response.json();
+                
+                const taskList = document.getElementById('taskList');
+                const emptyState = document.getElementById('emptyState');
+                const taskCount = document.getElementById('taskCount');
+
+                taskList.innerHTML = '';
+                taskCount.textContent = `${tasks.length} task${tasks.length === 1 ? '' : 's'}`;
+
+                if (tasks.length === 0) {
+                    emptyState.classList.remove('hidden');
+                } else {
+                    emptyState.classList.add('hidden');
+                    tasks.forEach(task => {
+                        const li = document.createElement('li');
+                        li.className = 'flex items-center justify-between p-3.5 bg-white border border-slate-100 rounded-xl shadow-sm hover:shadow transition-all';
+                        li.innerHTML = `
+                            <div class="flex items-center space-x-3.5 flex-1 min-w-0">
+                                <input type="checkbox" ${task.completed ? 'checked' : ''} 
+                                    onchange="toggleTask(${task.id}, this.checked)"
+                                    class="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
+                                <span class="${task.completed ? 'line-through text-slate-400' : 'text-slate-700'} font-medium truncate">${escapeHtml(task.title)}</span>
+                            </div>
+                            <button onclick="deleteTask(${task.id})" class="text-slate-400 hover:text-red-500 transition-colors p-1 ml-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </button>
+                        `;
+                        taskList.appendChild(li);
+                    });
+                }
+            } catch (err) {
+                console.error('Error fetching tasks:', err);
+            }
+        }
+
+        async function addTask(event) {
+            event.preventDefault();
+            const input = document.getElementById('taskInput');
+            const title = input.value.trim();
+            if (!title) return;
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: title, completed: false })
+                });
+                if (!response.ok) throw new Error('Failed to create task');
+                input.value = '';
+                fetchTasks();
+            } catch (err) {
+                console.error('Error adding task:', err);
+            }
+        }
+
+        async function toggleTask(id, completed) {
+            try {
+                const response = await fetch(`${API_URL}${id}/`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ completed: completed })
+                });
+                if (!response.ok) throw new Error('Failed to update task state');
+                fetchTasks();
+            } catch (err) {
+                console.error('Error updating task:', err);
+                fetchTasks(); // Revert UI state on failure
+            }
+        }
+
+        async function deleteTask(id) {
+            try {
+                const response = await fetch(`${API_URL}${id}/`, { method: 'DELETE' });
+                if (!response.ok) throw new Error('Failed to delete task');
+                fetchTasks();
+            } catch (err) {
+                console.error('Error deleting task:', err);
+            }
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        // Initial load on page start
+        fetchTasks();
+    </script>
 </body>
 </html>

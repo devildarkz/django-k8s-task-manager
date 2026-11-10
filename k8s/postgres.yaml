@@ -13,22 +13,22 @@ spec:
         app: postgres
     spec:
       containers:
-      - name: postgres
-        image: postgres:15
-        env:
-        - name: POSTGRES_USER
-          value: postgres
-        - name: POSTGRES_PASSWORD
-          value: password
-        - name: POSTGRES_DB
-          value: tasksdb
-        ports:
-        - containerPort: 5432
+        - name: postgres
+          image: postgres:15
+          env:
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              value: password
+            - name: POSTGRES_DB
+              value: tasksdb
+          ports:
+            - containerPort: 5432
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: db
+  name: postgres-service
 spec:
   selector:
     app: postgres
@@ -36,4 +36,3 @@ spec:
     - protocol: TCP
       port: 5432
       targetPort: 5432
-      
